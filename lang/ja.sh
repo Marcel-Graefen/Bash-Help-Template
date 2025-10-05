@@ -9,6 +9,20 @@ TEXT_BACKTITLE="ヘルプシステム"
 TEXT_PROMPT="オプションを選択:"
 TEXT_LABEL="ファイル"
 
+TEXT_SKIPPED_DENY="スキップされました（拒否）"
+TEXT_NO_READ_PERMISSION="読み取り権限がありません"
+TEXT_FILE_TOO_LARGE="ファイルが大きすぎます"
+TEXT_SEARCH_START="検索を開始:"
+TEXT_RECOGNIZED_SINGLE_FILE="認識: 単一INIファイル"
+TEXT_RECOGNIZED_DIRECTORY="認識: ディレクトリ"
+TEXT_RECOGNIZED_WILDCARD="認識: ワイルドカードパターン"
+TEXT_RECOGNIZED_RECURSIVE="認識: 再帰パターン"
+TEXT_INVALID_PATH="無効なパス"
+TEXT_SEARCHED_DIRECTORY="検索されたディレクトリ"
+TEXT_SUCCESS="成功"
+TEXT_DIRECTORIES="ディレクトリ"
+TEXT_FILES="ファイル"
+
 # ボタン
 BTN_OK="OK"
 BTN_CANCEL="キャンセル"
@@ -56,3 +70,29 @@ ERR_602="無効なコンテンツ形式"
 ERR_700="内部システムエラー"
 ERR_701="Whiptailが利用できません"
 ERR_702="ターミナルサイズが小さすぎます"
+
+# タイプ定数
+TYPE_CONFIG="設定"
+TYPE_CONTENT="コンテンツ"
+TYPE_ERROR="エラー"
+TYPE_FILE="ファイル"
+TYPE_LANGUAGE="言語"
+TYPE_MENU="メニュー"
+TYPE_SYSTEM="システム"
+TYPE_VERIFY="検証"
+
+# ステータスタイプ
+TYPE_STATUS_COMPLETED="完了"
+TYPE_STATUS_FAILED="失敗"
+TYPE_STATUS_PENDING="保留中"
+TYPE_STATUS_VERIFIED="検証済み"
+
+# 操作タイプ
+TYPE_OPERATION_READ="読み取り操作"
+TYPE_OPERATION_VALIDATE="検証操作"
+TYPE_OPERATION_VERIFY="検証操作"
+
+# モジュールタイプ
+TYPE_MODULE_CORE="コアモジュール"
+TYPE_MODULE_FILE="ファイルモジュール"
+TYPE_MODULE_VERIFY="検証モジュール"

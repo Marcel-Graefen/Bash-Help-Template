@@ -9,6 +9,20 @@ TEXT_BACKTITLE="Система помощи"
 TEXT_PROMPT="Выберите опцию:"
 TEXT_LABEL="Файл"
 
+TEXT_SKIPPED_DENY="пропущено (Запрещено)"
+TEXT_NO_READ_PERMISSION="Нет прав на чтение"
+TEXT_FILE_TOO_LARGE="Файл слишком большой"
+TEXT_SEARCH_START="Начало поиска в"
+TEXT_RECOGNIZED_SINGLE_FILE="Распознано: Один INI-файл"
+TEXT_RECOGNIZED_DIRECTORY="Распознано: Каталог"
+TEXT_RECOGNIZED_WILDCARD="Распознано: Шаблон с подстановкой"
+TEXT_RECOGNIZED_RECURSIVE="Распознано: Рекурсивный шаблон"
+TEXT_INVALID_PATH="Неверный путь"
+TEXT_SEARCHED_DIRECTORY="Проверенные каталоги"
+TEXT_SUCCESS="Успех"
+TEXT_DIRECTORIES="каталоги"
+TEXT_FILES="файлы"
+
 # КНОПКИ
 BTN_OK="OK"
 BTN_CANCEL="Отмена"
@@ -56,3 +70,29 @@ ERR_602="Неверный формат контента"
 ERR_700="Внутренняя системная ошибка"
 ERR_701="Whiptail недоступен"
 ERR_702="Размер терминала слишком мал"
+
+# КОНСТАНТЫ ТИПОВ
+TYPE_CONFIG="Конфигурация"
+TYPE_CONTENT="Содержание"
+TYPE_ERROR="Ошибка"
+TYPE_FILE="Файл"
+TYPE_LANGUAGE="Язык"
+TYPE_MENU="Меню"
+TYPE_SYSTEM="Система"
+TYPE_VERIFY="Проверка"
+
+# ТИПЫ СТАТУСОВ
+TYPE_STATUS_COMPLETED="Завершено"
+TYPE_STATUS_FAILED="Не удалось"
+TYPE_STATUS_PENDING="В ожидании"
+TYPE_STATUS_VERIFIED="Проверено"
+
+# ТИПЫ ОПЕРАЦИЙ
+TYPE_OPERATION_READ="Операция чтения"
+TYPE_OPERATION_VALIDATE="Операция проверки"
+TYPE_OPERATION_VERIFY="Операция верификации"
+
+# ТИПЫ МОДУЛЕЙ
+TYPE_MODULE_CORE="Основной модуль"
+TYPE_MODULE_FILE="Файловый модуль"
+TYPE_MODULE_VERIFY="Модуль проверки"

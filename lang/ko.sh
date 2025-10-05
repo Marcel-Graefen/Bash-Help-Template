@@ -9,6 +9,20 @@ TEXT_BACKTITLE="도움말 시스템"
 TEXT_PROMPT="옵션을 선택하세요:"
 TEXT_LABEL="파일"
 
+TEXT_SKIPPED_DENY="건너뜀 (거부됨)"
+TEXT_NO_READ_PERMISSION="읽기 권한 없음"
+TEXT_FILE_TOO_LARGE="파일이 너무 큼"
+TEXT_SEARCH_START="검색 시작:"
+TEXT_RECOGNIZED_SINGLE_FILE="인식됨: 단일 INI 파일"
+TEXT_RECOGNIZED_DIRECTORY="인식됨: 디렉토리"
+TEXT_RECOGNIZED_WILDCARD="인식됨: 와일드카드 패턴"
+TEXT_RECOGNIZED_RECURSIVE="인식됨: 재귀 패턴"
+TEXT_INVALID_PATH="잘못된 경로"
+TEXT_SEARCHED_DIRECTORY="검색된 디렉토리"
+TEXT_SUCCESS="성공"
+TEXT_DIRECTORIES="디렉토리"
+TEXT_FILES="파일"
+
 # BUTTONS
 BTN_OK="확인"
 BTN_CANCEL="취소"
@@ -56,3 +70,29 @@ ERR_602="잘못된 콘텐츠 형식"
 ERR_700="내부 시스템 오류"
 ERR_701="Whiptail을 사용할 수 없습니다"
 ERR_702="터미널 크기가 너무 작습니다"
+
+# 유형 상수
+TYPE_CONFIG="구성"
+TYPE_CONTENT="콘텐츠"
+TYPE_ERROR="오류"
+TYPE_FILE="파일"
+TYPE_LANGUAGE="언어"
+TYPE_MENU="메뉴"
+TYPE_SYSTEM="시스템"
+TYPE_VERIFY="검증"
+
+# 상태 유형
+TYPE_STATUS_COMPLETED="완료됨"
+TYPE_STATUS_FAILED="실패함"
+TYPE_STATUS_PENDING="보류 중"
+TYPE_STATUS_VERIFIED="검증됨"
+
+# 작업 유형
+TYPE_OPERATION_READ="읽기 작업"
+TYPE_OPERATION_VALIDATE="유효성 검사 작업"
+TYPE_OPERATION_VERIFY="검증 작업"
+
+# 모듈 유형
+TYPE_MODULE_CORE="코어 모듈"
+TYPE_MODULE_FILE="파일 모듈"
+TYPE_MODULE_VERIFY="검증 모듈"

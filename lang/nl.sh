@@ -9,6 +9,20 @@ TEXT_BACKTITLE="Hulp Systeem"
 TEXT_PROMPT="Kies een optie:"
 TEXT_LABEL="Bestand"
 
+TEXT_SKIPPED_DENY="overgeslagen (Geweigerd)"
+TEXT_NO_READ_PERMISSION="Geen leesrechten"
+TEXT_FILE_TOO_LARGE="Bestand te groot"
+TEXT_SEARCH_START="Zoeken gestart in"
+TEXT_RECOGNIZED_SINGLE_FILE="Herkend: Enkel INI-bestand"
+TEXT_RECOGNIZED_DIRECTORY="Herkend: Map"
+TEXT_RECOGNIZED_WILDCARD="Herkend: Jokerteken patroon"
+TEXT_RECOGNIZED_RECURSIVE="Herkend: Recursief patroon"
+TEXT_INVALID_PATH="Ongeldig pad"
+TEXT_SEARCHED_DIRECTORY="Gezochte mappen"
+TEXT_SUCCESS="Succes"
+TEXT_DIRECTORIES="mappen"
+TEXT_FILES="bestanden"
+
 # KNOPPEN
 BTN_OK="OK"
 BTN_CANCEL="Annuleren"
@@ -56,3 +70,29 @@ ERR_602="Ongeldige inhoudsindeling"
 ERR_700="Interne systeemfout"
 ERR_701="Whiptail niet beschikbaar"
 ERR_702="Terminalgrootte te klein"
+
+# TYPE CONSTANTEN
+TYPE_CONFIG="Configuratie"
+TYPE_CONTENT="Inhoud"
+TYPE_ERROR="Fout"
+TYPE_FILE="Bestand"
+TYPE_LANGUAGE="Taal"
+TYPE_MENU="Menu"
+TYPE_SYSTEM="Systeem"
+TYPE_VERIFY="Verificatie"
+
+# STATUS TYPEN
+TYPE_STATUS_COMPLETED="Voltooid"
+TYPE_STATUS_FAILED="Mislukt"
+TYPE_STATUS_PENDING="In afwachting"
+TYPE_STATUS_VERIFIED="Geverifieerd"
+
+# OPERATIE TYPEN
+TYPE_OPERATION_READ="Leesoperatie"
+TYPE_OPERATION_VALIDATE="Validatieoperatie"
+TYPE_OPERATION_VERIFY="Verificatieoperatie"
+
+# MODULE TYPEN
+TYPE_MODULE_CORE="Kernmodule"
+TYPE_MODULE_FILE="Bestandsmodule"
+TYPE_MODULE_VERIFY="Verificatiemodule"

@@ -11,6 +11,20 @@ TEXT_BACKTITLE="Hilfe-System"
 TEXT_PROMPT="Wählen Sie eine Option:"
 TEXT_LABEL="Datei"
 
+TEXT_SKIPPED_DENY="übersprungen (Deny)"
+TEXT_NO_READ_PERMISSION="Keine Leserechte"
+TEXT_FILE_TOO_LARGE="Datei zu groß"
+TEXT_SEARCH_START="Starte Suche in"
+TEXT_RECOGNIZED_SINGLE_FILE="Erkannt: Einzelne INI-Datei"
+TEXT_RECOGNIZED_DIRECTORY="Erkannt: Verzeichnis"
+TEXT_RECOGNIZED_WILDCARD="Erkannt: Wildcard Pattern"
+TEXT_RECOGNIZED_RECURSIVE="Erkannt: Rekursives Pattern"
+TEXT_INVALID_PATH="Ungültiger Pfad"
+TEXT_SEARCHED_DIRECTORY="Durchsuchte Ordner"
+TEXT_SUCCESS="Erfolg"
+TEXT_DIRECTORIES="Ordner"
+TEXT_FILES="Dateien"
+
 # BUTTONS
 BTN_OK="OK"
 BTN_CANCEL="Abbrechen"
@@ -58,3 +72,32 @@ ERR_602="Ungültiges Inhaltsformat"
 ERR_700="Interner Systemfehler"
 ERR_701="Whiptail nicht verfügbar"
 ERR_702="Terminalgröße zu klein"
+
+
+# TYPEN
+
+# KONSTANTEN
+TYPE_CONFIG="Konfiguration"
+TYPE_CONTENT="Inhalt"
+TYPE_ERROR="Fehler"
+TYPE_FILE="Datei"
+TYPE_LANGUAGE="Sprache"
+TYPE_MENU="Menü"
+TYPE_SYSTEM="System"
+TYPE_VERIFY="Verifizierung"
+
+# STATUS
+TYPE_STATUS_COMPLETED="Abgeschlossen"
+TYPE_STATUS_FAILED="Fehlgeschlagen"
+TYPE_STATUS_PENDING="Ausstehend"
+TYPE_STATUS_VERIFIED="Verifiziert"
+
+# OPERATION
+TYPE_OPERATION_READ="Lesevorgang"
+TYPE_OPERATION_VALIDATE="Validierungsvorgang"
+TYPE_OPERATION_VERIFY="Verifizierungsvorgang"
+
+# MODULE
+TYPE_MODULE_CORE="Kernmodul"
+TYPE_MODULE_FILE="Dateimodul"
+TYPE_MODULE_VERIFY="Verifizierungsmodul"

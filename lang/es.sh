@@ -9,6 +9,20 @@ TEXT_BACKTITLE="Sistema de Ayuda"
 TEXT_PROMPT="Elija una opción:"
 TEXT_LABEL="Archivo"
 
+TEXT_SKIPPED_DENY="omitido (Denegado)"
+TEXT_NO_READ_PERMISSION="Sin permisos de lectura"
+TEXT_FILE_TOO_LARGE="Archivo demasiado grande"
+TEXT_SEARCH_START="Iniciando búsqueda en"
+TEXT_RECOGNIZED_SINGLE_FILE="Reconocido: Archivo INI único"
+TEXT_RECOGNIZED_DIRECTORY="Reconocido: Directorio"
+TEXT_RECOGNIZED_WILDCARD="Reconocido: Patrón comodín"
+TEXT_RECOGNIZED_RECURSIVE="Reconocido: Patrón recursivo"
+TEXT_INVALID_PATH="Ruta inválida"
+TEXT_SEARCHED_DIRECTORY="Directorios buscados"
+TEXT_SUCCESS="Éxito"
+TEXT_DIRECTORIES="directorios"
+TEXT_FILES="archivos"
+
 # BUTTONS
 BTN_OK="OK"
 BTN_CANCEL="Cancelar"
@@ -56,3 +70,29 @@ ERR_602="Formato de contenido inválido"
 ERR_700="Error interno del sistema"
 ERR_701="Whiptail no disponible"
 ERR_702="Tamaño de terminal demasiado pequeño"
+
+# TIPOS CONSTANTES
+TYPE_CONFIG="Configuración"
+TYPE_CONTENT="Contenido"
+TYPE_ERROR="Error"
+TYPE_FILE="Archivo"
+TYPE_LANGUAGE="Idioma"
+TYPE_MENU="Menú"
+TYPE_SYSTEM="Sistema"
+TYPE_VERIFY="Verificación"
+
+# TIPOS DE ESTADO
+TYPE_STATUS_COMPLETED="Completado"
+TYPE_STATUS_FAILED="Fallido"
+TYPE_STATUS_PENDING="Pendiente"
+TYPE_STATUS_VERIFIED="Verificado"
+
+# TIPOS DE OPERACIÓN
+TYPE_OPERATION_READ="Operación de lectura"
+TYPE_OPERATION_VALIDATE="Operación de validación"
+TYPE_OPERATION_VERIFY="Operación de verificación"
+
+# TIPOS DE MÓDULO
+TYPE_MODULE_CORE="Módulo central"
+TYPE_MODULE_FILE="Módulo de archivos"
+TYPE_MODULE_VERIFY="Módulo de verificación"

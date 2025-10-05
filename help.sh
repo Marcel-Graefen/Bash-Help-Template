@@ -104,7 +104,7 @@ source "./globals.sh"
 
     # Size limitations
     (( width < SYS_MIN_WIDTH )) && width=$SYS_MIN_WIDTH
-    (( width > SYS_MAX_WIDTH )) && width=$SYS_MAX_WIDTH
+    (( width > _MAX_WIDTH )) && width=$SYS_MAX_WIDTH
     (( width > TERM_WIDTH - 10 )) && width=$((TERM_WIDTH - 10))
     (( height < SYS_MIN_HEIGHT )) && height=$SYS_MIN_HEIGHT
     (( height > SYS_MAX_HEIGHT )) && height=$SYS_MAX_HEIGHT
@@ -211,6 +211,51 @@ source "./globals.sh"
 
 
 get_ini_files() {
+  # INPUT in Array umwandeln falls String
+  local input_array=()
+  if [[ "$(declare -p INPUT 2>/dev/null)" =~ "declare -a" ]]; then
+    # INPUT ist Array
+    input_array=("${INPUT[@]}")
+  else
+    # INPUT ist String
+    input_array=("$INPUT")
+  fi
+
+  # Interne Variable für normalisierten Input
+  local normalized_inputs=()
+
+  _normalize_input_path() {
+    local path="$1"
+    local result="$path"
+
+    # Wenn es ein Wildcard ist und ein führendes . hat, Realpath holen und . ersetzen
+    if [[ "$path" == .* && "$path" == *"*"* ]]; then
+      local current_dir=$(realpath ".")
+      result="${path/./$current_dir}"
+    # NUR für existierende Pfade ohne Wildcards Realpath anwenden
+    elif [[ "$path" != *"*"* && -e "$path" ]]; then
+      # Alles was mit . beginnt wird direkt in Realpath geändert
+      if [[ "$path" == .* ]]; then
+        result=$(realpath "$path" 2>/dev/null || echo "$path")
+      # Alles was KEIN . oder / hat wird in Realpath geändert
+      elif [[ "$path" != */* && "$path" != .* ]]; then
+        result=$(realpath "$path" 2>/dev/null || echo "$path")
+      fi
+    fi
+
+    # Alles was ein VERZEICHNIS ist und KEIN / am Ende hat wird / angehängt
+    if [[ -d "$result" && "$result" != */ ]]; then
+      result="$result/"
+    fi
+
+    echo "$result"
+  }
+
+  # Jeden Input normalisieren
+  for input_item in "${input_array[@]}"; do
+    local normalized=$(_normalize_input_path "$input_item")
+    normalized_inputs+=("$normalized")
+  done
 
   # Alle Unterfunktionen innerhalb der Hauptfunktion definieren
   _process_single_file() {
@@ -218,7 +263,7 @@ get_ini_files() {
 
     # Deny-Check
     if _is_denied "$file"; then
-      log_message "DEBUG" "Übersprungen (Deny): $file"
+      log_message "$TYPE_DEBUG" "$TYPE_FILE ${TEXT_SKIPPED_DENY}: $file"
       return
     fi
 
@@ -230,7 +275,7 @@ get_ini_files() {
 
     # Leserechte-Check
     if [[ ! -r "$file" ]]; then
-      log_message "ERROR" "Keine Leserechte: $file"
+      log_message "$TYPE_ERROR" "$TYPE_FILE ${TEXT_NO_READ_PERMISSION}: $file"
       ((permission_errors++))
       return
     fi
@@ -251,7 +296,7 @@ get_ini_files() {
 
     # Deny-Check für gesamten Ordner
     if _is_denied "$dir"; then
-      log_message "DEBUG" "Übersprungen (Deny): $dir"
+      log_message "$TYPE_DEBUG" "$TYPE_DIRECTORY ${TEXT_SKIPPED_DENY}: $dir"
       return
     fi
 
@@ -315,7 +360,7 @@ get_ini_files() {
     local file_size=$(stat -c %s "$file" 2>/dev/null || echo 0)
 
     if [[ $file_size -gt $INT_MAX_FILE_SIZE ]]; then
-      log_message "WARNING" "Datei zu groß: $file (${file_size} bytes)"
+      log_message "$TYPE_WARNING" "$TYPE_FILE ${TEXT_FILE_TOO_LARGE}: $file (${file_size} bytes)"
       return 1
     fi
     return 0
@@ -324,27 +369,41 @@ get_ini_files() {
   _verify_file() {
     local file="$1"
 
+    # Globale Variablen zurücksetzen
+    verify_error_msg=""
+    verify_error_code=""
+
     if declare -f verify_file >/dev/null; then
-      if verify_file "$file"; then
+      local message
+      local code
+
+      message=$(verify_file "$file" 2>&1)
+      code=$?
+
+      if [[ $code -eq 0 ]]; then
         return 0
       else
-        temp_verify_message="Verify fehlgeschlagen für: $file"
+        # In globale Variablen schreiben
+        verify_error_msg="${message:-${ERR_105}}"
+        verify_error_code="$code"
         return 1
       fi
+    else
+      # ERROR mit globalem Error-Code
+      verify_error_msg=""
+      verify_error_code="700"
+      return 1
     fi
-    # Falls keine verify_file existiert, automatisch erfolgreich
-    return 0
   }
 
   # === HAUPTPROGRAMM ===
   local found_dirs=()
-  local found_files=()
   local verified_files=()
-  local temp_verify_message=""
+  local verify_error_msg=""
+  local verify_error_code=""
 
-  local INT_MAX_FILE_SIZE="${MAX_FILE_SIZE:-10485760}"
   local INT_MAX_FILE_SIZE=$(convert_to_bytes "${MAX_FILE_SIZE:-10M}")
-
+  local INT_MAX_RECURSION_DEPTH="${MAX_RECURSION_DEPTH:-5}"
 
   # Counter für Fehlerbehandlung
   local dirs_found=0
@@ -354,65 +413,53 @@ get_ini_files() {
   local verify_errors=0
   local size_errors=0
 
-  log_message "DEBUG" "Starte Suche in: $INPUT"
+  log_message "$TYPE_DEBUG" "${TEXT_SEARCH_START}: $INPUT"
 
-  # 1. Input-Typ erkennen und RealPath konvertieren
-  local resolved_path
-  if [[ -f "$INPUT" && "$INPUT" == *.ini ]]; then
-    log_message "DEBUG" "Erkannt: Einzelne INI-Datei"
-    resolved_path=$(realpath "$INPUT" 2>/dev/null || echo "$INPUT")
-    _process_single_file "$resolved_path"
+  # Jeden normalisierten Input verarbeiten
+  for normalized_input in "${normalized_inputs[@]}"; do
+    # 1. Input-Typ erkennen und verarbeiten
+    local resolved_path
 
-  elif [[ -d "$INPUT" ]]; then
-    log_message "DEBUG" "Erkannt: Verzeichnis"
-    resolved_path=$(realpath "$INPUT" 2>/dev/null || echo "$INPUT")
-    _process_directory "$resolved_path"
+    if [[ -f "$normalized_input" && "$normalized_input" == *.ini ]]; then
+      log_message "$TYPE_DEBUG" "${TEXT_RECOGNIZED_SINGLE_FILE}"
+      resolved_path=$(realpath "$normalized_input" 2>/dev/null || echo "$normalized_input")
+      _process_single_file "$resolved_path"
 
-  elif [[ "$INPUT" == *"*"* ]]; then
-    log_message "DEBUG" "Erkannt: Wildcard Pattern"
-    _process_wildcard "$INPUT"
+    elif [[ -d "$normalized_input" ]]; then
+      log_message "$TYPE_DEBUG" "${TEXT_RECOGNIZED_DIRECTORY}"
+      resolved_path=$(realpath "$normalized_input" 2>/dev/null || echo "$normalized_input")
+      _process_directory "$resolved_path"
 
-  elif [[ "$INPUT" == *"**"* ]]; then
-    log_message "DEBUG" "Erkannt: Rekursives Pattern"
-    _process_recursive "$INPUT"
+    elif [[ "$normalized_input" == *"*"* ]]; then
+      log_message "$TYPE_DEBUG" "${TEXT_RECOGNIZED_WILDCARD}"
+      _process_wildcard "$normalized_input"
 
-  else
-    log_message "ERROR" "Ungültiger Pfad: $INPUT"
-    show_error --code "201" --info "$INPUT" --exit
-    return 1
-  fi
+    elif [[ "$normalized_input" == *"**"* ]]; then
+      log_message "$TYPE_DEBUG" "${TEXT_RECOGNIZED_RECURSIVE}"
+      _process_recursive "$normalized_input"
 
-  # 2. Gezielte Fehlerbehandlung basierend auf Counters
-  if [[ $dirs_found -eq 0 ]]; then
-    # Keine Ordner gefunden
-    show_error --code "203" --info "$INPUT" --exit
-    return 1
-  elif [[ $files_found -eq 0 ]]; then
-    # Ordner da, aber keine Dateien
-    local dir_list=$(printf '%s\n' "${found_dirs[@]}")
-    show_error --code "202" --info "$INPUT" --line "Durchsuchte Ordner:\n$dir_list" --exit
-    return 1
-  elif [[ $files_found -gt 0 && $files_verified -eq 0 ]]; then
-    # Dateien da, aber alle Verify failed
-    show_error --code "105" --info "$INPUT" --line "$temp_verify_message" --exit
-    return 1
-  elif [[ $permission_errors -gt 0 && $files_verified -eq 0 ]]; then
-    # Nur Permission Errors, keine erfolgreichen Dateien
-    show_error --code "204" --info "$INPUT" --exit
-    return 1
-  fi
+    else
+      log_message "$TYPE_ERROR" "${TEXT_INVALID_PATH}: $normalized_input"
+      show_error -t "$TYPE_FILE" --code "201" --info "$normalized_input" --exit
+      return 1
+    fi
+  done
 
-  # 3. Erfolgreiche Ergebnisse in globale Arrays schreiben
+  # Übersichtliche Fehlerbehandlung
+  [[ $dirs_found -eq 0 ]] && { show_error -t "$TYPE_DIRECTORY" --code "203" --info "$INPUT" --exit; return 1; }
+  [[ $files_found -eq 0 ]] && { show_error -t "$TYPE_FILE" --code "202" --info "$INPUT" --line "${TEXT_SEARCHED_DIRECTORY}:\n$(printf '%s\n' "${found_dirs[@]}")" --exit; return 1; }
+  [[ $permission_errors -gt 0 && $files_verified -eq 0 ]] && { show_error -t "$TYPE_FILE" --code "204" --info "$INPUT" --exit; return 1; }
+  [[ -n "$verify_error_code" || -n "$verify_error_msg" ]] && { show_error -t "$TYPE_VERIFY" --code "$verify_error_code" --line "$verify_error_msg" --exit; return 1; }
+
+  # Erfolgreiche Ergebnisse in globale Arrays schreiben
   OUTPUT_DIRS=("${found_dirs[@]}")
   OUTPUT_FILES=("${verified_files[@]}")
 
-  log_message "DEBUG" "Erfolg: ${#found_dirs[@]} Ordner, ${#verified_files[@]} Dateien"
+  log_message "$TYPE_DEBUG" "${TEXT_SUCCESS}: ${#found_dirs[@]} ${TEXT_DIRECTORIES}, ${#verified_files[@]} ${TEXT_FILES}"
   return 0
-
 }
 
-INPUT="./**/**"
-DENY=("**/help.en.ini" "**/help.de.ini")
+INPUT="./**"
 get_ini_files
 
 # Nach Aufruf stehen Ergebnisse in:

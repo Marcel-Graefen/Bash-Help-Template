@@ -13,12 +13,31 @@
 declare -g MIN_WIDTH=50
 declare -g MAX_WIDTH=100
 declare -g MIN_HEIGHT=10
-declare -g  MAX_HEIGHT=40
+declare -g MAX_HEIGHT=40
 declare -g PADDING=10
 
 # === SYSTEM LANGUAGE ===
 declare -g LANGUAGE_NAME="English"
 declare -g LANGUAGE_NAME_EN="English"
+
+# === TEXT ===
+
+declare -g TEXT_BACKTITLE="Help System"
+declare -g TEXT_PROMPT="Choose an option:"
+
+declare -g TEXT_SKIPPED_DENY="skipped (Deny)"
+declare -g TEXT_NO_READ_PERMISSION="No read permission"
+declare -g TEXT_FILE_TOO_LARGE="File too large"
+declare -g TEXT_SEARCH_START="Starting search in"
+declare -g TEXT_RECOGNIZED_SINGLE_FILE="Recognized: Single INI file"
+declare -g TEXT_RECOGNIZED_DIRECTORY="Recognized: Directory"
+declare -g TEXT_RECOGNIZED_WILDCARD="Recognized: Wildcard pattern"
+declare -g TEXT_RECOGNIZED_RECURSIVE="Recognized: Recursive pattern"
+declare -g TEXT_INVALID_PATH="Invalid path"
+declare -g TEXT_SEARCHED_DIRECTORY="Searched directories"
+declare -g TEXT_SUCCESS="Success"
+declare -g TEXT_DIRECTORIES="directories"
+declare -g TEXT_FILES="files"
 
 # === SYSTEM KONSTANTEN ===
 declare -g SYS_NAME="Help System"
@@ -32,8 +51,6 @@ declare -g SYS_LOG="/tmp/help.log"
 
 # === AKTUELLE SPRACHVARIABLEN (ENGLISH FALLBACK) ===
 declare -g CURRENT_LANG="en"
-declare -g TEXT_BACKTITLE="Help System"
-declare -g TEXT_PROMPT="Choose an option:"
 declare -g TEXT_LABEL="File"
 declare -g BTN_OK="OK"
 declare -g BTN_CANCEL="Cancel"
@@ -75,6 +92,32 @@ declare -g ERR_602="Invalid content format"
 declare -g ERR_700="Internal system error"
 declare -g ERR_701="Whiptail not available"
 declare -g ERR_702="Terminal size too small"
+
+# === TYPE  ===
+declare -g TYPE_CONFIG="Configuration"
+declare -g TYPE_CONTENT="Content"
+declare -g TYPE_ERROR="Error"
+declare -g TYPE_FILE="File"
+declare -g TYPE_LANGUAGE="Language"
+declare -g TYPE_MENU="Menu"
+declare -g TYPE_SYSTEM="System"
+declare -g TYPE_VERIFY="Verification"
+
+# === STATUS TYPES ===
+declare -g TYPE_STATUS_COMPLETED="Completed"
+declare -g TYPE_STATUS_FAILED="Failed"
+declare -g TYPE_STATUS_PENDING="Pending"
+declare -g TYPE_STATUS_VERIFIED="Verified"
+
+# === OPERATION TYPES ===
+declare -g TYPE_OPERATION_READ="Read Operation"
+declare -g TYPE_OPERATION_VALIDATE="Validation Operation"
+declare -g TYPE_OPERATION_VERIFY="Verification Operation"
+
+# === MODULE TYPES ===
+declare -g TYPE_MODULE_CORE="Core Module"
+declare -g TYPE_MODULE_FILE="File Module"
+declare -g TYPE_MODULE_VERIFY="Verification Module"
 
 # === SYSTEMSPRACHE ERKENNEN ===
 detect() {
