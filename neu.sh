@@ -7,7 +7,7 @@
 #
 # Autor      : Marcel Gräfen
 # Version    : 0.0.1
-# Datum      : 2025-10-06
+# Datum      : 2025-10-05
 #
 # Anforderungen:
 #   - Bash 4.3+
@@ -20,50 +20,36 @@
 # ========================================================================================
 
 # Automatisch beste Sprache wählen
+source "./globals.sh"
 
-declare -g GLOBAL_FILE="./globals.sh"
-declare -g KEY_NAME="help"
-declare -g SECOND_LANGUAGE="ja"
+# Output Arrays für get_ini_files
+declare -a OUTPUT_DIRS=()
+declare -a OUTPUT_FILES=()
 
-source "$GLOBAL_FILE" "ko"
-
-
-# GLOBALE ARRAYS FUR INI-DATEN (@see verify_file )
-declare -A content_value      # Werte: content_value["de.Section.key"]="value"
-declare -A content_keys       # Keys in Reihenfolge: content_keys["de.Section"]="key1 key2"
-declare -A menu_order         # Menu Reihenfolge: menu_order["de.Section"]="item1 item2"
-declare -a content_order      # Sections in Reihenfolge: content_order=("de.Sec1" "de.Sec2")
-declare -A config_cache      # "de"=1, "en"=1
-declare -A config_timestamp  # timestamp pro lang_code
-declare -A config_by_lang    # "<lang_code>.<key>" = value
-
-# GLOBALE SYSTEM VARIABLEN (@see get_ini_files -> _check_file_size )
-declare -g verify_error_msg=""
-declare -g verify_error_line_msg=""
-declare -g verify_error_code=""
-
-# GLOBALE SPRACH VARIABLEN (@see verify_file )
 declare -A LANGUAGES       # Lokale Namen: "de" → "Deutsch"
 declare -A LANGUAGES_EN    # Internationale Namen: "de" → "German"
 declare -A LANGUAGE_FILES  # INI-Pfade: "de" → "/pfad/de.ini"
 
-# Output Arrays für get_ini_files (@see get_ini_files )
-declare -a OUTPUT_DIRS=()
-declare -a OUTPUT_FILES=()
+declare -A config_cache      # "de"=1, "en"=1
+declare -A config_timestamp  # timestamp pro lang_code
+declare -A config_by_lang    # "<lang_code>.<key>" = value
 
-# MENU HISTORY (Index-Array fur Navigation)
-declare -a MENU_HISTORY=()
-
-# Sprache wird aus (GLOBAL_FILE) Geladen
-declare -g CURRENT_LANG_CODE="${CURRENT_LANG:-$SECOND_LANGUAGE}"
+declare -A menu_order content_value content_keys
+declare -a content_order
 
 
+CURRENT_MENU=""
+CURRENT_LANG_CODE="$CURRENT_LANG"
+
+
+NAME_KEY="help"
+
+declare -a verify_error_msg verify_error_code
 
 # ========================================================================================
 # HELPER FUNKTIONEN
 # ========================================================================================
 
-# FUNCTION CONVERT TO BYTES
 # =============================================================================
 # convert_to_bytes
 #
@@ -99,7 +85,6 @@ convert_to_bytes() {
   fi
 }
 
-# FUNCTION CALCUALTE DIMENSIONS
 # =============================================================================
 # calculate_dimensions
 #
@@ -146,7 +131,6 @@ calculate_dimensions() {
   echo "$width $height"
 }
 
-# FUNCTION BUILD BREADCRUMB
 # =============================================================================
 # build_breadcrumb
 #
@@ -169,7 +153,6 @@ build_breadcrumb() {
   echo "$bc"
 }
 
-# FUNCTION LOG MESSAGE
 # =============================================================================
 # log_message
 #
@@ -181,288 +164,201 @@ log_message() {
   echo "[$(date '+%Y-%m-%d %H:%M:%S')] $level: $message" >> "$SYS_LOG_FILE"
 }
 
-# FUNCTION SHIW ERROR
 # =============================================================================
 # show_error
 #
 # Zeigt Fehler mit Whiptail an
 # =============================================================================
-# show_error() {
-#   local error_type="ERROR" error_code="" extra_info="" extra_line="" should_exit=false
-
-#   while [[ $# -gt 0 ]]; do
-#     case "$1" in
-#       -t|--type)  error_type="$2"; shift 2 ;;
-#       -c|--code)  error_code="$2"; shift 2 ;;
-#       -i|--info)  extra_info="$2"; shift 2 ;;
-#       -l|--line)  extra_line="$2"; shift 2 ;;
-#       -x|--exit)  should_exit=true; shift ;;
-#       *) echo "Unknown option: $1" >&2; return 1 ;;
-#     esac
-#   done
-
-#   [[ -z "$error_code" ]] && { echo "Error: --code required" >&2; return 1; }
-
-#   local var_name="ERR_${error_code}"
-#   local message="${!var_name:-"Unknown error: $error_code"}"
-#   [[ -n "$extra_info" ]] && message="$message: $extra_info"
-#   [[ -n "$extra_line" ]] && message="$message\n\n$extra_line"
-#   log_message "ERROR" "$error_type ($error_code): $message"
-
-#   read -r width height < <(calculate_dimensions "$message")
-#   if [[ "$should_exit" == true ]]; then
-#     whiptail --backtitle "$(build_breadcrumb)" \
-#              --title "$error_type" \
-#              --ok-button "$BTN_CLOSE" \
-#              --msgbox "$message" 0 "$width"
-#     exit 1
-#   else
-#     whiptail --backtitle "$(build_breadcrumb)" \
-#              --title "$error_type" \
-#              --ok-button "$BTN_OK" \
-#              --msgbox "$message" 0 "$width"
-#   fi
-# }
-
 show_error() {
-
-  local error_header="ERROR" error_code="" replacements="" extra_line="" should_exit=false custom_message=""
+  local error_type="ERROR" error_code="" extra_info="" extra_line="" should_exit=false
 
   while [[ $# -gt 0 ]]; do
     case "$1" in
-      -h|--header)  error_header="$2"; shift 2 ;;
+      -t|--type)  error_type="$2"; shift 2 ;;
       -c|--code)  error_code="$2"; shift 2 ;;
-      -r|--replace)  replacements="$2"; shift 2 ;;
+      -i|--info)  extra_info="$2"; shift 2 ;;
       -l|--line)  extra_line="$2"; shift 2 ;;
-      -m|--message)  custom_message="$2"; shift 2 ;;
       -x|--exit)  should_exit=true; shift ;;
       *) echo "Unknown option: $1" >&2; return 1 ;;
     esac
   done
 
-  local message=""
+  [[ -z "$error_code" ]] && { echo "Error: --code required" >&2; return 1; }
 
-  if [[ -n "$custom_message" ]]; then
-    message="$custom_message"
-  elif [[ -n "$error_code" ]]; then
-    local var_name="ERR_${error_code}"
-    message="${!var_name:-"Unknown error: $error_code"}"
+  local var_name="ERR_${error_code}"
+  local message="${!var_name:-"Unknown error: $error_code"}"
+  [[ -n "$extra_info" ]] && message="$message: $extra_info"
+  [[ -n "$extra_line" ]] && message="$message\n\n$extra_line"
+  log_message "ERROR" "$error_type ($error_code): $message"
 
-
-    if [[ -n "$replacements" ]]; then
-      local -a replace_array
-      IFS='|' read -ra replace_array <<< "$replacements"
-
-      for replacement in "${replace_array[@]}"; do
-        replacement="${replacement//\\|/|}"
-        message="${message/\%s/$replacement}"
-      done
-    fi
-  fi
-
-  [[ -n "$extra_line" ]] && message="${message:+$message\n\n}$extra_line"
-  [[ -z "$message" ]] && message="An error occurred"
-
-  log_message "ERROR" "$error_header (${error_code:-"CUSTOM"}): $message"
-
-  # Größenberechnung mit Fallback
-  local width height
-  if declare -f calculate_dimensions >/dev/null; then
-      read -r width height < <(calculate_dimensions "$message")
-  else
-      width=$SYS_MIN_WIDTH
-  fi
-
+  read -r width height < <(calculate_dimensions "$message")
   if [[ "$should_exit" == true ]]; then
     whiptail --backtitle "$(build_breadcrumb)" \
-             --title "$error_header" \
+             --title "$error_type" \
              --ok-button "$BTN_CLOSE" \
              --msgbox "$message" 0 "$width"
     exit 1
   else
     whiptail --backtitle "$(build_breadcrumb)" \
-             --title "$error_header" \
+             --title "$error_type" \
              --ok-button "$BTN_OK" \
              --msgbox "$message" 0 "$width"
   fi
 }
 
-# =============================================================================
-# =============================================================================
-# =============================================================================
 
 
-# ========================================================================================
-# verify_file
-# ========================================================================================
+get_meta_value() {
+  local lang="$1"
+  local key="$2"
+  echo "${config_by_lang["$lang.$key"]:-}"
+}
 
-# === VERIFY FILES ===
 
 verify_file() {
 
   local -A _temp_global _temp_menu_order _temp_content_value _temp_content_key
   local -a _temp_section_order _temp_content_order
+  local -A _key_counter
+
 
   local file="$1"
   local file_timestamp
   local meta_lang_code meta_lang_code meta_name
 
 
-  # FUNCTION PARST INI TO ARRAYS
-  _parse_ini_to_arrays() {
+_parse_ini_to_arrays() {
+  local file="$1"
+  local current_section=""
+  declare -A _key_counter=()  # für Duplikate
 
-    local file="$1"
-    local current_section=""
-    declare -A _key_counter=()  # für Duplikate
+  while IFS= read -r line || [[ -n $line ]]; do
+    # Whitespace trim
+    line="${line#"${line%%[![:space:]]*}"}"
+    line="${line%"${line##*[![:space:]]}"}"
+    [[ -z "$line" ]] && continue
 
-    local COUNTER=0
+    case "$line" in
+      \#*|\;*) continue ;;  # Kommentare überspringen
+      \[*\])                # Sektion
+        current_section="${line:1:-1}"
+        _temp_section_order+=("$current_section")
+        ;;
+      *=*)
+        # Key-Value Paar verarbeiten
+        local key="${line%%=*}"
+        local value="${line#*=}"
 
-    while IFS= read -r line || [[ -n $line ]]; do
-      # Whitespace trim
-      line="${line#"${line%%[![:space:]]*}"}"
-      line="${line%"${line##*[![:space:]]}"}"
-      [[ -z "$line" ]] && continue
+        # Whitespace von Key und Value trimmen
+        key="${key#"${key%%[![:space:]]*}"}"
+        key="${key%"${key##*[![:space:]]}"}"
+        value="${value#"${value%%[![:space:]]*}"}"
+        value="${value%"${value##*[![:space:]]}"}"
 
-      case "$line" in
-        \#*|\;*) continue ;;  # Kommentare überspringen
-        \[*\])                # Sektion
-          current_section="${line:1:-1}"
-          _temp_section_order+=("$current_section")
-          ;;
-        *=*)
-          # Key-Value Paar verarbeiten
-          local key="${line%%=*}"
-          local value="${line#*=}"
+        if [[ -n "$current_section" ]]; then
+          # Key-Counter für Duplikate
+          _key_counter["$current_section.$key"]=$(( ${_key_counter["$current_section.$key"]:-0} + 1 ))
+          local count="${_key_counter["$current_section.$key"]}"
 
-          # Whitespace von Key und Value trimmen
-          key="${key#"${key%%[![:space:]]*}"}"
-          key="${key%"${key##*[![:space:]]}"}"
-          value="${value#"${value%%[![:space:]]*}"}"
-          value="${value%"${value##*[![:space:]]}"}"
+          # Key mit Zähler suffix wenn nötig
+          # local full_key="$key"
+          # if [[ $count -gt 1 ]]; then
+            full_key="${key}$((count))"
+          # fi
 
-          if [[ -n "$current_section" ]]; then
-            local count="${_key_counter["$current_section.$key"]}"
+          # In globale Variable schreiben
+          _temp_global["$current_section.$key"]="$value"
 
-            # In globale Variable schreiben
-            _temp_global["$current_section.$key"]="$value"
-
-            # Menu Order für nicht-type Keys
-            if [[ "$key" != "type" ]]; then
-              _temp_menu_order["$current_section"]="${_temp_menu_order["$current_section"]:-} $key"
-            fi
-
-            # Output Arrays für type=output Sections
-            if [[ "$key" == "type" && "$value" == "output" ]]; then
-              # Diese Section ist eine Output-Section
-              _temp_content_order+=("$current_section")
-              # Initialisiere die Content-Arrays für diese Section
-            elif [[ -n "${_temp_global["$current_section.type"]}" && "${_temp_global["$current_section.type"]}" == "output" && "$key" != "type" ]]; then
-              # Wenn current_section type=output hat, dann in content Arrays speichern
-              _temp_content_value["$current_section.${key}${COUNTER}"]="$value"
-              _temp_content_key["$current_section.${key}${COUNTER}"]="${key}${COUNTER}"
-            fi
-          else
-            # Globale Keys (ohne Section)
-            _key_counter[".$key"]=$(( ${_key_counter[".$key"]:-0} + 1 ))
-            local count="${_key_counter[".$key"]}"
-
+          # Menu Order für nicht-type Keys
+          if [[ "$key" != "type" ]]; then
+            _temp_menu_order["$current_section"]="${_temp_menu_order["$current_section"]:-} $key"
           fi
-          ;;
-      esac
 
-        ((COUNTER++))
+          # Output Arrays für type=output Sections
+          if [[ "$key" == "type" && "$value" == "output" ]]; then
+            # Diese Section ist eine Output-Section
+            _temp_content_order+=("$current_section")
+            # Initialisiere die Content-Arrays für diese Section
+          elif [[ -n "${_temp_global["$current_section.type"]}" && "${_temp_global["$current_section.type"]}" == "output" && "$key" != "type" ]]; then
+            # Wenn current_section type=output hat, dann in content Arrays speichern
+            _temp_content_value["$current_section.$full_key"]="$value"
+            _temp_content_key["$current_section.$full_key"]="$full_key"
+          fi
+        else
+          # Globale Keys (ohne Section)
+          _key_counter[".$key"]=$(( ${_key_counter[".$key"]:-0} + 1 ))
+          local count="${_key_counter[".$key"]}"
 
-    done < "$file"
+          local full_key="$key"
+          if [[ $count -gt 1 ]]; then
+            full_key="${key}$((count))"
+          fi
 
-  }
+          _temp_global["$key"]="$value"
+        fi
+        ;;
+    esac
+  done < "$file"
+}
 
-
-  # FUNCTION VALIDATE INI STRUCTURE
+  # Validate full INI structure
   _validate_ini_structure() {
 
-    meta_language="${_temp_global["meta.language"]:-}"
-    meta_language_en="${_temp_global["meta.language_en"]:-}"
-    meta_lang_code="${_temp_global["meta.lang_code"]:-}"
-    meta_name="${_temp_global["meta.name"]:-}"
+    local has_menu_sections=false
+    local has_output_sections=false
 
-    if [[ -z "$meta_name" ]]; then
+    # Menü- und Output-Prüfung
+    for section in "${_temp_section_order[@]}"; do
+      local section_type="${_temp_global[$section.type]}"
+      if [[ "$section_type" == "menu" ]]; then
+        has_menu_sections=true
+      elif [[ "$section_type" == "output" ]]; then
+        has_output_sections=true
+      fi
+    done
 
-      verify_error_msg=""
-      verify_error_line_msg="$file"
-      verify_error_code="101"
-
-      return 1
-
+    # Auto-Menü falls nur Output vorhanden
+    if [[ "$has_menu_sections" != true && "$has_output_sections" == true ]]; then
+      create_auto_menu_from_outputs
+      has_menu_sections=true
     fi
 
-    if [[ "$meta_name" != "$KEY_NAME" ]]; then
-
+    # Kein Menü → Fehler
+    if [[ "$has_menu_sections" != true ]]; then
       verify_error_msg=""
-      verify_error_line_msg="$file"
-      verify_error_code="101"
-
+      verify_error_code="104"
       return 1
-
-    fi
-
-    if [[ -z "$meta_lang_code" ]]; then
-
-      verify_error_msg=""
-      verify_error_line_msg="$file"
-      verify_error_code="501"
-
-      return 1
-
-    fi
-
-
-    if [[ -z "$meta_language" &&  "$meta_lang_code" == "$CURRENT_LANG_CODE" ]]; then
-
-      _temp_global["meta.lang_code"]="$LANGUAGE_NAME"
-
-    elif [[ -z "$meta_language" &&  "$meta_lang_code" != "$CURRENT_LANG_CODE" ]]; then
-
-      verify_error_msg=""
-      verify_error_line_msg="$file"
-      verify_error_code="501"
-
-      return 1
-
-    fi
-
-    if [[ -z "$meta_language_en" &&  "$meta_lang_code" == "$CURRENT_LANG" ]]; then
-
-      _temp_global["meta.language_en"]="$LANGUAGE_NAME_EN"
-
-    elif [[ -z "$meta_language_en" &&  "$meta_lang_code" != "$CURRENT_LANG_CODE" ]]; then
-
-      verify_error_msg=""
-      verify_error_line_msg="$file"
-      verify_error_code="501"
-
-      return 1
-
     fi
 
     return 0
-
   }
 
 
-  #  Meta nur parsen
-  _parse_ini_to_arrays "$file" || return 1;
+  # Schritt 1: Meta nur parsen
 
-    # Volle Struktur validieren
-   _validate_ini_structure || return 1;
+  _parse_ini_to_arrays "$file" || { echo "${ERR_101}"; return 1; }
+  meta_language="${_temp_global["meta.language"]:-}"
+  meta_lang_code="${_temp_global["meta.lang_code"]:-}"
+  meta_name="${_temp_global["meta.name"]:-}"
+  file_timestamp=$(stat -c %Y "$file" 2>/dev/null || echo 0)
 
-  # Cache prüfen
+  # Meta validieren
+  if [[ -z "$meta_language" || -z "$meta_lang_code" || -z "$meta_name" || "$meta_name" != "$NAME_KEY" ]]; then
+    verify_error_msg=""
+    verify_error_code="100"
+    return 1
+  fi
+
+  # Schritt 2: Cache prüfen
   if [[ -n "${config_cache[$meta_lang_code]}" && $file_timestamp -le ${config_timestamp[$meta_lang_code]:-0} ]]; then
     # Bereits aktuelle Version im Cache → skip
     return 0
   fi
 
+  # Schritt 3: Volle Struktur validieren
+  _validate_ini_structure || { echo "${ERR_105}"; return 1; }
 
-  # Cache aktualisieren (bestehender Code)
+  # Schritt 4: Cache aktualisieren (bestehender Code)
   for key in "${!_temp_global[@]}"; do
     config_by_lang["$meta_lang_code.$key"]="${_temp_global[$key]}"
   done
@@ -486,10 +382,11 @@ verify_file() {
   done
 
 
+
   config_cache["$meta_lang_code"]=1
   config_timestamp["$meta_lang_code"]="$file_timestamp"
 
-  # NEU: globale Sprache registrieren
+  # === NEU: globale Sprache registrieren ===
   LANGUAGES["$meta_lang_code"]="${_temp_global[meta.language]:-$meta_lang_code}"
   LANGUAGES_EN["$meta_lang_code"]="${_temp_global[meta.language_en]:-$meta_lang_code}"
   LANGUAGE_FILES["$meta_lang_code"]="$file"
@@ -499,13 +396,12 @@ verify_file() {
 }
 
 
-#!===
-
 # ========================================================================================
 # get_ini_files
 # ========================================================================================
 
-# === FUNCTION GET INI FILES ===
+# FUNCTION GET INI FILES
+
 
 get_ini_files() {
 
@@ -536,7 +432,6 @@ get_ini_files() {
   # Interne Variable für normalisierten Input
   local normalized_inputs=()
 
-  # FUNCTION NORMALIZE INPUT PATH
   _normalize_input_path() {
     local path="$1"
     local result="$path"
@@ -570,7 +465,6 @@ get_ini_files() {
     normalized_inputs+=("$normalized")
   done
 
-  # FUNCTION PROSESS SINGLE FILE
   # Alle Unterfunktionen innerhalb der Hauptfunktion definieren
   _process_single_file() {
     local file="$1"
@@ -605,7 +499,6 @@ get_ini_files() {
     fi
   }
 
-  # FUNCTION PROCESS DIRETORY
   _process_directory() {
     local dir="$1"
 
@@ -624,7 +517,6 @@ get_ini_files() {
     done < <(find "$dir" -maxdepth 1 -name "*.ini" -type f 2>/dev/null)
   }
 
-  # FUNCTION PROZESS WILDCARD
   _process_wildcard() {
     local pattern="$1"
 
@@ -640,7 +532,6 @@ get_ini_files() {
     done
   }
 
-  # FUNCTION PROCESS RECUSIVE
   _process_recursive() {
     local pattern="$1"
     local base_dir="." depth=""
@@ -672,7 +563,6 @@ get_ini_files() {
     return 1
   }
 
-  # FUNCTION CHECK FILE SIZE
   _check_file_size() {
     local file="$1"
     local file_size=$(stat -c %s "$file" 2>/dev/null || echo 0)
@@ -684,31 +574,21 @@ get_ini_files() {
     return 0
   }
 
-  # FUNCTION VERITY FILES
-  # Hier ist ein Zu
-  local Call_Count=0
-  local Error_Count=0
   _verify_file() {
     local file="$1"
-    local -i call_count=0
-    local -i error_count=0
 
-    ((call_count++))
-
+    # Globale Variablen zurücksetzen
     verify_error_msg=""
-    verify_error_line_msg=""
     verify_error_code=""
 
     if declare -f verify_file >/dev/null; then
-      if verify_file "$file"; then
-        return 0
-      else
-        ((error_count++))
-        return 1
-      fi
+
+      verify_file "$file"
+
     else
+      # ERROR mit globalem Error-Code
+      verify_error_msg=""
       verify_error_code="700"
-      ((error_count++))
       return 1
     fi
   }
@@ -740,7 +620,7 @@ get_ini_files() {
 
     else
       log_message "$TYPE_ERROR" "${TEXT_INVALID_PATH}: $normalized_input"
-      show_error -h "$TYPE_FILE" -c "201" --info "$normalized_input" --exit
+      show_error -t "$TYPE_FILE" --code "201" --info "$normalized_input" --exit
       return 1
     fi
   done
@@ -748,11 +628,7 @@ get_ini_files() {
   [[ $dirs_found -eq 0 ]] && { show_error -t "$TYPE_DIRECTORY" --code "203" --info "$INPUT" --exit; return 1; }
   [[ $files_found -eq 0 ]] && { show_error -t "$TYPE_FILE" --code "202" --info "$INPUT" --line "${TEXT_SEARCHED_DIRECTORY}:\n$(printf '%s\n' "${found_dirs[@]}")" --exit; return 1; }
   [[ $permission_errors -gt 0 && $files_verified -eq 0 ]] && { show_error -t "$TYPE_FILE" --code "204" --info "$INPUT" --exit; return 1; }
-
-  if (( Call_Count > 0 && Call_Count == Error_Count )); then
-      show_error -t "$TYPE_VERIFY" --code "$verify_error_code" --info "$verify_error_msg" --line "$verify_error_line_msg" --exit
-      return 1
-  fi
+  [[ -n "$verify_error_code" || -n "$verify_error_msg" ]] && { show_error -t "$TYPE_VERIFY" --code "$verify_error_code" --line "$verify_error_msg" --exit; return 1; }
 
   # Erfolgreiche Ergebnisse in globale Arrays schreiben
   OUTPUT_DIRS=("${found_dirs[@]}")
@@ -763,53 +639,7 @@ get_ini_files() {
 
 }
 
-#!===
 
-# === VERIFY LANGUAGE ===
-
-verify_language() {
-
-  local Set_Language="$CURRENT_LANG_CODE"
-
-  echo "$CURRENT_LANG_CODE"
-
-  _set_laguage() {
-    local lang="$1"
-
-    CURRENT_LANG_CODE="$lang"
-    source "$GLOBAL_FILE" "$CURRENT_LANG_CODE"
-
-    CURRENT_LANG_FILE="${LANGUAGE_FILES[$CURRENT_LANG_CODE]}"
-    CURRENT_LANG_NAME="${LANGUAGES[$CURRENT_LANG_CODE]}"
-    CURRENT_LANG_NAME_EN="${LANGUAGES_EN[$CURRENT_LANG_CODE]}"
-
-  }
-
-  if [[ -z "${LANGUAGES[$CURRENT_LANG_CODE]}" ]]; then
-
-    if [[ -n "${LANGUAGES[$SECOND_LANGUAGE]}" ]]; then
-
-      _set_laguage "$SECOND_LANGUAGE"
-      show_error -t "$ERR_501" -c "501" -l "$ERR_502: <$Set_Language> \n${ERR_503} ${SECOND_LANGUAGE}"
-
-    else
-
-      for key in "${!LANGUAGES[@]}"; do
-      _set_laguage "$key"
-      show_error -t "$ERR_501" -c "501" -l "${ERR_502}n: <$Set_Language> <$SECOND_LANGUAGE> \n${ERR_503} ${key}"
-        break
-      done
-
-    fi
-
-  fi
-
-}
-
-#!===
-
-
-# === WHIPTAIL OUTPUT ===
 
 # FUNCTION SHOW LANGUAGE MENU
 show_language_menu() {
@@ -858,14 +688,26 @@ show_language_menu() {
   CURRENT_LANG_NAME_EN="${LANGUAGES_EN[$CURRENT_LANG_CODE]}"
 
   # Optional: globals.sh nur sourcen, wenn nötig
-  source "$GLOBAL_FILE" "$CURRENT_LANG_CODE"
+  source "./globals.sh" "$CURRENT_LANG_CODE"
 
   return 0
 
 }
 
 
-  # FUNCTION SHOW TEXT WITH BUTTONS
+  validate_file_path() {
+    local file="$1"
+
+    # Security check for path traversal
+    [[ "$file" =~ \.\. ]] && show_error -t "Security Error" -c 400 -i "$file" -x
+
+    # Check if file exists and is readable
+    [[ -f "$file" && -r "$file" ]] || return 1
+
+    return 0
+  }
+
+
   show_text_with_buttons() {
 
     local title="$1"
@@ -891,7 +733,8 @@ show_language_menu() {
 
   }
 
-  # FUNCTION SHOW FILE WITH BUTTONS
+  #!===
+
   show_file_with_buttons() {
 
     local title="$1"
@@ -922,7 +765,10 @@ show_language_menu() {
 
   }
 
+
+
 # FUNCTION SHOW CONTENT
+
 show_output_content() {
   local section="$1"
   local title="${section//_/ }"
@@ -1009,8 +855,8 @@ show_output_content() {
 
   return 0
 }
-
 # FUNCTION SHOW HELP MENU
+
 show_help_menu() {
 
   # Hilfsfunktion: Setzt CURRENT_MENU auf die erste Menüsektion der aktuellen Sprache
@@ -1023,7 +869,6 @@ show_help_menu() {
       fi
     done
   }
-
 
   # Setze CURRENT_MENU, falls leer
   [[ -z "$CURRENT_MENU" ]] && _set_current_menu
@@ -1131,13 +976,10 @@ show_help_menu() {
 
 }
 
-#!===
+
+
+
 
 INPUT="/home/marcel/Git_Public/Bash-Help-Template/neu/**/"
 get_ini_files
-verify_language
-
-echo "${CURRENT_LANG_CODE}"
-
-
 show_help_menu

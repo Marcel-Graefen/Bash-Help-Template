@@ -37,6 +37,7 @@ BTN_LANGUAGE="Select Language"
 BTN_HELP="Help"
 
 # FEHLER
+
 ERR_100="Missing required configuration"
 ERR_101="Invalid INI structure in file"
 ERR_102="No language files found"

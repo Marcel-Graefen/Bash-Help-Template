@@ -64,6 +64,7 @@ declare -g BTN_LANGUAGE="Language"
 declare -g BTN_HELP="Help"
 
 # === FEHLERCODES (ENGLISH FALLBACK) ===
+
 declare -g ERR_100="Missing required configuration"
 declare -g ERR_101="Invalid INI structure in file"
 declare -g ERR_102="No language files found"
