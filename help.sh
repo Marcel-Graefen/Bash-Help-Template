@@ -21,7 +21,7 @@
 
 # Automatisch beste Sprache wählen
 
-declare -g GLOBAL_FILE="./globals.sh"
+declare -g GLOBAL_FILE="./globals.org.sh"
 declare -g KEY_NAME="help"
 declare -g SECOND_LANGUAGE="ja"
 
@@ -111,6 +111,42 @@ convert_to_bytes() {
 # Rückgabe:
 #   Breite Höhe
 # =============================================================================
+# calculate_dimensions() {
+#   local content="$1"
+#   local TERM_WIDTH=$(tput cols)
+#   local TERM_HEIGHT=$(tput lines)
+#   local width height
+
+#   if [[ -f "$content" ]]; then
+#     # Datei
+#     local max_len=$(awk '{if(length>m)m=length}END{print m}' "$content" 2>/dev/null || echo 0)
+#     width=$((max_len + SYS_PADDING*2))
+#     height=$(wc -l < "$content" 2>/dev/null || echo 0)
+#     height=$((height + SYS_PADDING*2))
+#   else
+#     # Textinput
+#     local line_count=0
+#     local max_len=0
+#     while IFS= read -r line; do
+#       (( ${#line} > max_len )) && max_len=${#line}
+#       ((line_count++))
+#     done < <(echo "$content")
+#     width=$((max_len + SYS_PADDING*2))
+#     height=$((line_count + SYS_PADDING*2))
+#   fi
+
+#   # Begrenzungen
+#   (( width < SYS_MIN_WIDTH )) && width=$SYS_MIN_WIDTH
+#   (( width > SYS_MAX_WIDTH )) && width=$SYS_MAX_WIDTH
+#   (( width > TERM_WIDTH - 10 )) && width=$((TERM_WIDTH - 10))
+#   (( height < SYS_MIN_HEIGHT )) && height=$SYS_MIN_HEIGHT
+#   (( height > SYS_MAX_HEIGHT )) && height=$SYS_MAX_HEIGHT
+#   (( height > TERM_HEIGHT - 5 )) && height=$((TERM_HEIGHT - 5))
+
+#   echo "$width $height"
+# }
+
+# Verbesserte Version für Absätze:
 calculate_dimensions() {
   local content="$1"
   local TERM_WIDTH=$(tput cols)
@@ -118,24 +154,31 @@ calculate_dimensions() {
   local width height
 
   if [[ -f "$content" ]]; then
-    # Datei
+    # Datei - behandelt leere Zeilen bereits korrekt
     local max_len=$(awk '{if(length>m)m=length}END{print m}' "$content" 2>/dev/null || echo 0)
     width=$((max_len + SYS_PADDING*2))
     height=$(wc -l < "$content" 2>/dev/null || echo 0)
     height=$((height + SYS_PADDING*2))
   else
-    # Textinput
+    # Textinput - muss Absätze korrekt behandeln
     local line_count=0
     local max_len=0
+
+    # IFS leer lassen um führende/trailing Leerzeichen zu behalten
     while IFS= read -r line; do
-      (( ${#line} > max_len )) && max_len=${#line}
+      # Leere Zeilen zählen trotzdem mit (für Absätze)
       ((line_count++))
+      # Nur nicht-leere Zeilen für Breitenberechnung
+      if [[ -n "$line" ]]; then
+        (( ${#line} > max_len )) && max_len=${#line}
+      fi
     done < <(echo "$content")
+
     width=$((max_len + SYS_PADDING*2))
     height=$((line_count + SYS_PADDING*2))
   fi
 
-  # Begrenzungen
+  # Begrenzungen (wie bisher)
   (( width < SYS_MIN_WIDTH )) && width=$SYS_MIN_WIDTH
   (( width > SYS_MAX_WIDTH )) && width=$SYS_MAX_WIDTH
   (( width > TERM_WIDTH - 10 )) && width=$((TERM_WIDTH - 10))
@@ -1133,11 +1176,11 @@ show_help_menu() {
 
 #!===
 
-INPUT="/home/marcel/Git_Public/Bash-Help-Template/neu/**/"
-get_ini_files
-verify_language
+# INPUT="/home/marcel/Git_Public/Bash-Help-Template/neu/**/"
+# get_ini_files
+# verify_language
 
-echo "${CURRENT_LANG_CODE}"
+# echo "${CURRENT_LANG_CODE}"
 
 
-show_help_menu
+# show_help_menu

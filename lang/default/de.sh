@@ -15,6 +15,8 @@ TXT_1101="Ja"
 TXT_1102="Nein"
 TXT_1103="Zurück"
 TXT_1104="Weiter"
+TXT_1105="Öffnen"
+TXT_1106="Schließen"
 
 # MESSAGE CODES (2000-2999)
 MSG_2000="Vorgang abgeschlossen"

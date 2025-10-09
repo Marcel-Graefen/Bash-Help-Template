@@ -1,0 +1,2 @@
+Dieses Script muss mit 'source' eingebunden werden:
+  source $(basename "$0")

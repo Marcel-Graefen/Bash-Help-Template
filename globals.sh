@@ -421,12 +421,15 @@ init_globals "$@"
 
 # Wenn direkt ausgeführt: Hinweis anzeigen und beenden
 if [[ "${BASH_SOURCE[0]}" == "${0}" ]]; then
-  echo "⚠️  Dieses Script muss mit 'source' eingebunden werden:"
-  echo "   source $(basename "$0")"
-  echo ""
-  echo "Beispiele:"
-  echo "   source $(basename "$0")                     # Automatische Spracherkennung"
-  echo "   source $(basename "$0") --lang de          # Deutsche Sprache"
-  echo "   source $(basename "$0") --load-only        # Nur Funktionen laden"
-  exit 1
+  # echo "⚠️  Dieses Script muss mit 'source' eingebunden werden:"
+  # echo "   source $(basename "$0")"
+  # echo ""
+  # echo "Beispiele:"
+  # echo "   source $(basename "$0")                     # Automatische Spracherkennung"
+  # echo "   source $(basename "$0") --lang de          # Deutsche Sprache"
+  # echo "   source $(basename "$0") --load-only        # Nur Funktionen laden"
+  # exit 1
+
+  source ./bash_deny.sh
+
 fi
