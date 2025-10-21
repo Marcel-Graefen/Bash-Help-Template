@@ -380,6 +380,8 @@ get_translation() {
   esac
 }
 
+
+
 init_globals() {
   # Ansonsten normale Options-Verarbeitung
   local lang=""

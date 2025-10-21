@@ -106,7 +106,7 @@ if whiptail --backtitle "$Background" \
                --title "TITLE" \
                --yes-button "Zu Help" \
                --no-button "Schließen" \
-               --yesno "${file_content}${Caller}" "$height" "$width"; then
+               --yesno "${file_content}" "$height" "$width"; then
 
   echo "yes $?"
 

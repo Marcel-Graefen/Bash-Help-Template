@@ -22,10 +22,10 @@
 # Automatisch beste Sprache wählen
 
 declare -g GLOBAL_FILE="./globals.org.sh"
-declare -g KEY_NAME="help"
-declare -g SECOND_LANGUAGE="ja"
+declare -g KEY_NAME="language_management_system"
+declare -g SECOND_LANGUAGE="en"
 
-source "$GLOBAL_FILE" "ko"
+source "$GLOBAL_FILE" "de"
 
 
 # GLOBALE ARRAYS FUR INI-DATEN (@see verify_file )
@@ -33,9 +33,9 @@ declare -A content_value      # Werte: content_value["de.Section.key"]="value"
 declare -A content_keys       # Keys in Reihenfolge: content_keys["de.Section"]="key1 key2"
 declare -A menu_order         # Menu Reihenfolge: menu_order["de.Section"]="item1 item2"
 declare -a content_order      # Sections in Reihenfolge: content_order=("de.Sec1" "de.Sec2")
-declare -A config_cache      # "de"=1, "en"=1
-declare -A config_timestamp  # timestamp pro lang_code
-declare -A config_by_lang    # "<lang_code>.<key>" = value
+declare -A config_cache       # "de"=1, "en"=1
+declare -A config_timestamp   # timestamp pro lang_code
+declare -A config_by_lang     # "<lang_code>.<key>" = value
 
 # GLOBALE SYSTEM VARIABLEN (@see get_ini_files -> _check_file_size )
 declare -g verify_error_msg=""
@@ -56,8 +56,6 @@ declare -a MENU_HISTORY=()
 
 # Sprache wird aus (GLOBAL_FILE) Geladen
 declare -g CURRENT_LANG_CODE="${CURRENT_LANG:-$SECOND_LANGUAGE}"
-
-
 
 # ========================================================================================
 # HELPER FUNKTIONEN
@@ -198,17 +196,19 @@ calculate_dimensions() {
 build_breadcrumb() {
   local bc=""
 
+  local backtitle="${config_by_lang[$CURRENT_LANG_CODE.meta.backtitle]:-Help System}"
+
   if [[ ${#MENU_HISTORY[@]} -eq 0 && -z "$CURRENT_MENU" ]]; then
-    bc="$TEXT_BACKTITLE"
+    bc="$backtitle"
   else
-    bc="$TEXT_BACKTITLE"
+    bc="$backtitle"
     for h in "${MENU_HISTORY[@]}"; do
       bc="$bc › ${h//_/ }"
     done
     [[ -n "$CURRENT_MENU" ]] && bc="$bc › ${CURRENT_MENU//_/ }"
   fi
 
-  [[ ! "$bc" =~ [a-zA-Z] ]] && bc="$TEXT_BACKTITLE"
+  [[ ! "$bc" =~ [a-zA-Z] ]] && bc="$backtitle"
   echo "$bc"
 }
 
@@ -230,105 +230,106 @@ log_message() {
 #
 # Zeigt Fehler mit Whiptail an
 # =============================================================================
-# show_error() {
-#   local error_type="ERROR" error_code="" extra_info="" extra_line="" should_exit=false
-
-#   while [[ $# -gt 0 ]]; do
-#     case "$1" in
-#       -t|--type)  error_type="$2"; shift 2 ;;
-#       -c|--code)  error_code="$2"; shift 2 ;;
-#       -i|--info)  extra_info="$2"; shift 2 ;;
-#       -l|--line)  extra_line="$2"; shift 2 ;;
-#       -x|--exit)  should_exit=true; shift ;;
-#       *) echo "Unknown option: $1" >&2; return 1 ;;
-#     esac
-#   done
-
-#   [[ -z "$error_code" ]] && { echo "Error: --code required" >&2; return 1; }
-
-#   local var_name="ERR_${error_code}"
-#   local message="${!var_name:-"Unknown error: $error_code"}"
-#   [[ -n "$extra_info" ]] && message="$message: $extra_info"
-#   [[ -n "$extra_line" ]] && message="$message\n\n$extra_line"
-#   log_message "ERROR" "$error_type ($error_code): $message"
-
-#   read -r width height < <(calculate_dimensions "$message")
-#   if [[ "$should_exit" == true ]]; then
-#     whiptail --backtitle "$(build_breadcrumb)" \
-#              --title "$error_type" \
-#              --ok-button "$BTN_CLOSE" \
-#              --msgbox "$message" 0 "$width"
-#     exit 1
-#   else
-#     whiptail --backtitle "$(build_breadcrumb)" \
-#              --title "$error_type" \
-#              --ok-button "$BTN_OK" \
-#              --msgbox "$message" 0 "$width"
-#   fi
-# }
-
 show_error() {
-
-  local error_header="ERROR" error_code="" replacements="" extra_line="" should_exit=false custom_message=""
+  local error_type="ERROR" error_code="" extra_info="" extra_line="" should_exit=false
 
   while [[ $# -gt 0 ]]; do
     case "$1" in
-      -h|--header)  error_header="$2"; shift 2 ;;
+      -t|--type)  error_type="$2"; shift 2 ;;
       -c|--code)  error_code="$2"; shift 2 ;;
-      -r|--replace)  replacements="$2"; shift 2 ;;
+      -i|--info)  extra_info="$2"; shift 2 ;;
       -l|--line)  extra_line="$2"; shift 2 ;;
-      -m|--message)  custom_message="$2"; shift 2 ;;
       -x|--exit)  should_exit=true; shift ;;
       *) echo "Unknown option: $1" >&2; return 1 ;;
     esac
   done
 
-  local message=""
+  [[ -z "$error_code" ]] && { echo "Error: --code required" >&2; return 1; }
 
-  if [[ -n "$custom_message" ]]; then
-    message="$custom_message"
-  elif [[ -n "$error_code" ]]; then
-    local var_name="ERR_${error_code}"
-    message="${!var_name:-"Unknown error: $error_code"}"
+  local var_name="ERR_${error_code}"
+  local message="${!var_name:-"Unknown error: $error_code"}"
+  [[ -n "$extra_info" ]] && message="$message: $extra_info"
+  [[ -n "$extra_line" ]] && message="$message\n\n$extra_line"
+  # TODO LOG_MESSAGE
+  log_message "ERROR" "$error_type ($error_code): $message"
 
-
-    if [[ -n "$replacements" ]]; then
-      local -a replace_array
-      IFS='|' read -ra replace_array <<< "$replacements"
-
-      for replacement in "${replace_array[@]}"; do
-        replacement="${replacement//\\|/|}"
-        message="${message/\%s/$replacement}"
-      done
-    fi
-  fi
-
-  [[ -n "$extra_line" ]] && message="${message:+$message\n\n}$extra_line"
-  [[ -z "$message" ]] && message="An error occurred"
-
-  log_message "ERROR" "$error_header (${error_code:-"CUSTOM"}): $message"
-
-  # Größenberechnung mit Fallback
-  local width height
-  if declare -f calculate_dimensions >/dev/null; then
-      read -r width height < <(calculate_dimensions "$message")
-  else
-      width=$SYS_MIN_WIDTH
-  fi
-
+  read -r width height < <(calculate_dimensions "$message")
   if [[ "$should_exit" == true ]]; then
     whiptail --backtitle "$(build_breadcrumb)" \
-             --title "$error_header" \
+             --title "$error_type" \
              --ok-button "$BTN_CLOSE" \
              --msgbox "$message" 0 "$width"
     exit 1
   else
     whiptail --backtitle "$(build_breadcrumb)" \
-             --title "$error_header" \
+             --title "$error_type" \
              --ok-button "$BTN_OK" \
              --msgbox "$message" 0 "$width"
   fi
 }
+
+# show_error() {
+
+#   local error_header="ERROR" error_code="" replacements="" extra_line="" should_exit=false custom_message=""
+
+#   while [[ $# -gt 0 ]]; do
+#     case "$1" in
+#       -h|--header)  error_header="$2"; shift 2 ;;
+#       -c|--code)  error_code="$2"; shift 2 ;;
+#       -r|--replace)  replacements="$2"; shift 2 ;;
+#       -l|--line)  extra_line="$2"; shift 2 ;;
+#       -m|--message)  custom_message="$2"; shift 2 ;;
+#       -x|--exit)  should_exit=true; shift ;;
+#       *) echo "Unknown option: $1" >&2; return 1 ;;
+#     esac
+#   done
+
+#   local message=""
+
+#   if [[ -n "$custom_message" ]]; then
+#     message="$custom_message"
+#   elif [[ -n "$error_code" ]]; then
+#     local var_name="ERR_${error_code}"
+#     message="${!var_name:-"Unknown error: $error_code"}"
+
+
+#     if [[ -n "$replacements" ]]; then
+#       local -a replace_array
+#       IFS='|' read -ra replace_array <<< "$replacements"
+
+#       for replacement in "${replace_array[@]}"; do
+#         replacement="${replacement//\\|/|}"
+#         message="${message/\%s/$replacement}"
+#       done
+#     fi
+#   fi
+
+#   [[ -n "$extra_line" ]] && message="${message:+$message\n\n}$extra_line"
+#   [[ -z "$message" ]] && message="An error occurred"
+
+#   log_message "ERROR" "$error_header (${error_code:-"CUSTOM"}): $message"
+
+#   # Größenberechnung mit Fallback
+#   local width height
+#   if declare -f calculate_dimensions >/dev/null; then
+#       read -r width height < <(calculate_dimensions "$message")
+#   else
+#       width=$SYS_MIN_WIDTH
+#   fi
+
+#   if [[ "$should_exit" == true ]]; then
+#     whiptail --backtitle "$(build_breadcrumb)" \
+#              --title "$error_header" \
+#              --ok-button "$BTN_CLOSE" \
+#              --msgbox "$message" 0 "$width"
+#     exit 1
+#   else
+#     whiptail --backtitle "$(build_breadcrumb)" \
+#              --title "$error_header" \
+#              --ok-button "$BTN_OK" \
+#              --msgbox "$message" 0 "$width"
+#   fi
+# }
 
 # =============================================================================
 # =============================================================================
@@ -390,16 +391,16 @@ verify_file() {
             _temp_global["$current_section.$key"]="$value"
 
             # Menu Order für nicht-type Keys
-            if [[ "$key" != "type" ]]; then
+            if [[ "$key" != "type" && "$key" != "key" ]]; then
               _temp_menu_order["$current_section"]="${_temp_menu_order["$current_section"]:-} $key"
             fi
 
             # Output Arrays für type=output Sections
-            if [[ "$key" == "type" && "$value" == "output" ]]; then
+            if [[ "$key" == "type" && "$value" == "content" ]]; then
               # Diese Section ist eine Output-Section
               _temp_content_order+=("$current_section")
               # Initialisiere die Content-Arrays für diese Section
-            elif [[ -n "${_temp_global["$current_section.type"]}" && "${_temp_global["$current_section.type"]}" == "output" && "$key" != "type" ]]; then
+            elif [[ -n "${_temp_global["$current_section.type"]}" && "${_temp_global["$current_section.type"]}" == "content" && "$key" != "type" && "$key" != "key" ]]; then
               # Wenn current_section type=output hat, dann in content Arrays speichern
               _temp_content_value["$current_section.${key}${COUNTER}"]="$value"
               _temp_content_key["$current_section.${key}${COUNTER}"]="${key}${COUNTER}"
@@ -620,6 +621,7 @@ get_ini_files() {
 
     # Deny-Check
     if _is_denied "$file"; then
+    # TODO LOG_MESSAGE
       log_message "$TYPE_DEBUG" "$TYPE_FILE ${TEXT_SKIPPED_DENY}: $file"
       return
     fi
@@ -632,6 +634,7 @@ get_ini_files() {
 
     # Leserechte-Check
     if [[ ! -r "$file" ]]; then
+    # TODO LOG_MESSAGE
       log_message "$TYPE_ERROR" "$TYPE_FILE ${TEXT_NO_READ_PERMISSION}: $file"
       ((permission_errors++))
       return
@@ -654,6 +657,7 @@ get_ini_files() {
 
     # Deny-Check für gesamten Ordner
     if _is_denied "$dir"; then
+    # TODO LOG_MESSAGE
       log_message "$TYPE_DEBUG" "$TYPE_DIRECTORY ${TEXT_SKIPPED_DENY}: $dir"
       return
     fi
@@ -721,6 +725,7 @@ get_ini_files() {
     local file_size=$(stat -c %s "$file" 2>/dev/null || echo 0)
 
     if [[ $file_size -gt $INT_MAX_FILE_SIZE ]]; then
+    # TODO LOG_MESSAGE
       log_message "$TYPE_WARNING" "$TYPE_FILE ${TEXT_FILE_TOO_LARGE}: $file (${file_size} bytes)"
       return 1
     fi
@@ -756,6 +761,7 @@ get_ini_files() {
     fi
   }
 
+  # TODO LOG_MESSAGE
   log_message "$TYPE_DEBUG" "${TEXT_SEARCH_START}: $INPUT"
 
   # Jeden normalisierten Input verarbeiten
@@ -764,35 +770,43 @@ get_ini_files() {
     local resolved_path
 
     if [[ -f "$normalized_input" && "$normalized_input" == *.ini ]]; then
+    # TODO LOG_MESSAGE
       log_message "$TYPE_DEBUG" "${TEXT_RECOGNIZED_SINGLE_FILE}"
       resolved_path=$(realpath "$normalized_input" 2>/dev/null || echo "$normalized_input")
       _process_single_file "$resolved_path"
 
     elif [[ -d "$normalized_input" ]]; then
+    # TODO LOG_MESSAGE
       log_message "$TYPE_DEBUG" "${TEXT_RECOGNIZED_DIRECTORY}"
       resolved_path=$(realpath "$normalized_input" 2>/dev/null || echo "$normalized_input")
       _process_directory "$resolved_path"
 
     elif [[ "$normalized_input" == *"*"* ]]; then
+    # TODO LOG_MESSAGE
       log_message "$TYPE_DEBUG" "${TEXT_RECOGNIZED_WILDCARD}"
       _process_wildcard "$normalized_input"
 
     elif [[ "$normalized_input" == *"**"* ]]; then
+    # TODO LOG_MESSAGE
       log_message "$TYPE_DEBUG" "${TEXT_RECOGNIZED_RECURSIVE}"
       _process_recursive "$normalized_input"
 
     else
+    # TODO LOG_MESSAGE
       log_message "$TYPE_ERROR" "${TEXT_INVALID_PATH}: $normalized_input"
+      # TODO LANGUAGE SYSTEM
       show_error -h "$TYPE_FILE" -c "201" --info "$normalized_input" --exit
       return 1
     fi
   done
   # Übersichtliche Fehlerbehandlung
+  # TODO LANGUAGE SYSTEM
   [[ $dirs_found -eq 0 ]] && { show_error -t "$TYPE_DIRECTORY" --code "203" --info "$INPUT" --exit; return 1; }
   [[ $files_found -eq 0 ]] && { show_error -t "$TYPE_FILE" --code "202" --info "$INPUT" --line "${TEXT_SEARCHED_DIRECTORY}:\n$(printf '%s\n' "${found_dirs[@]}")" --exit; return 1; }
   [[ $permission_errors -gt 0 && $files_verified -eq 0 ]] && { show_error -t "$TYPE_FILE" --code "204" --info "$INPUT" --exit; return 1; }
 
   if (( Call_Count > 0 && Call_Count == Error_Count )); then
+  # TODO LANGUAGE SYSTEM
       show_error -t "$TYPE_VERIFY" --code "$verify_error_code" --info "$verify_error_msg" --line "$verify_error_line_msg" --exit
       return 1
   fi
@@ -801,6 +815,7 @@ get_ini_files() {
   OUTPUT_DIRS=("${found_dirs[@]}")
   OUTPUT_FILES=("${verified_files[@]}")
 
+  # TODO LOG_MESSAGE
   log_message "$TYPE_DEBUG" "${TEXT_SUCCESS}: ${#found_dirs[@]} ${TEXT_DIRECTORIES}, ${#verified_files[@]} ${TEXT_FILES}"
   return 0
 
@@ -813,8 +828,6 @@ get_ini_files() {
 verify_language() {
 
   local Set_Language="$CURRENT_LANG_CODE"
-
-  echo "$CURRENT_LANG_CODE"
 
   _set_laguage() {
     local lang="$1"
@@ -833,12 +846,14 @@ verify_language() {
     if [[ -n "${LANGUAGES[$SECOND_LANGUAGE]}" ]]; then
 
       _set_laguage "$SECOND_LANGUAGE"
+      # TODO LANGUAGE SYSTEM
       show_error -t "$ERR_501" -c "501" -l "$ERR_502: <$Set_Language> \n${ERR_503} ${SECOND_LANGUAGE}"
 
     else
 
       for key in "${!LANGUAGES[@]}"; do
       _set_laguage "$key"
+      # TODO LANGUAGE SYSTEM
       show_error -t "$ERR_501" -c "501" -l "${ERR_502}n: <$Set_Language> <$SECOND_LANGUAGE> \n${ERR_503} ${key}"
         break
       done
@@ -891,6 +906,7 @@ show_language_menu() {
   done
 
   if [[ -z "$selected_code" ]]; then
+  # TODO LANGUAGE SYSTEM
     show_error -t "Language Error" -c 601 -i "$choice"
     return 1
   fi
@@ -941,10 +957,7 @@ show_language_menu() {
     local file="$2"
     local yes_button="${3:-$BTN_OK}"
     local no_button="$4"
-    validate_file_path "$file" || {
-      show_error -t "File Error" -c 200 -i "$file"
-      return 1
-    }
+
     local file_content=$(cat "$file")
     read -r width height < <(calculate_dimensions "$file_content")
 
@@ -985,6 +998,7 @@ show_output_content() {
   done
 
   if [[ $section_exists -eq 0 ]]; then
+  # TODO LANGUAGE SYSTEM
     show_error -t "Content Error" -c 600 -i "$section"
     return 1
   fi
@@ -1003,6 +1017,7 @@ show_output_content() {
 
 
   if [[ ${#sorted_keys[@]} -eq 0 ]]; then
+  # TODO LANGUAGE SYSTEM
     show_error -t "Content Error" -c 600 -i "$section"
     return 1
   fi
@@ -1019,7 +1034,6 @@ show_output_content() {
 
   local total_contents=${#contents[@]}
 
-  # Rest der Funktion gleich...
   local current_index=0
   while [[ $current_index -lt $total_contents ]]; do
     local page_number=$((current_index + 1))
@@ -1070,6 +1084,7 @@ show_help_menu() {
 
   # Setze CURRENT_MENU, falls leer
   [[ -z "$CURRENT_MENU" ]] && _set_current_menu
+  # TODO LANGUAGE SYSTEM
   [[ -z "$CURRENT_MENU" ]] && show_error -t "Menu Error" -c 301 -i "No menu sections found" --exit
 
   while true; do
@@ -1092,13 +1107,21 @@ show_help_menu() {
       # Add menu items in determined order
       for key in "${ordered_keys[@]}"; do
         local full_key="${CURRENT_LANG_CODE}.${CURRENT_MENU}.${key}"
-        [[ -n "${config_by_lang[$full_key]}" ]] && menu_items+=("$key" "${config_by_lang[$full_key]}")
+        if [[ -n "${config_by_lang[$full_key]}" ]]; then
+          local item="${config_by_lang[$full_key]}"
+          # Ersetze doppelte Unterstriche durch Platzhalter
+          item="${item//__/%UNDERSCORE%}"
+          # Ersetze einfache Unterstriche durch Leerzeichen
+          item="${item//_/ }"
+          # Setze Platzhalter zurück auf Unterstrich
+          item="${item//%UNDERSCORE%/_}"
+          menu_items+=("$key" "$item")
+        fi
       done
-
-
 
     # Keine Einträge → Fehler
     if [[ ${#menu_items[@]} -eq 0 ]]; then
+    # TODO LANGUAGE SYSTEM
       show_error -t "Menu Error" -c 301 -i "$CURRENT_MENU"
       exit 1
     fi
@@ -1150,12 +1173,14 @@ show_help_menu() {
       local selected_value="${config_by_lang[${CURRENT_LANG_CODE}.${CURRENT_MENU}.${choice}]}"
       local selected_type="${config_by_lang[${CURRENT_LANG_CODE}.${selected_value}.type]:-}"
 
+
       if [[ "$selected_type" == "menu" ]]; then
           MENU_HISTORY+=("$CURRENT_MENU")
           CURRENT_MENU="$selected_value"
-      elif [[ "$selected_type" == "output" ]]; then
+      elif [[ "$selected_type" == "content" ]]; then
           show_output_content "$selected_value"
       else
+      # TODO LANGUAGE SYSTEM
           show_error -t "Menu Error" -c 300
       fi
 
@@ -1176,11 +1201,7 @@ show_help_menu() {
 
 #!===
 
-# INPUT="/home/marcel/Git_Public/Bash-Help-Template/neu/**/"
-# get_ini_files
-# verify_language
-
-# echo "${CURRENT_LANG_CODE}"
-
-
-# show_help_menu
+INPUT="/home/marcel/Git_Public/Bash-Language-Management-System/help"
+get_ini_files
+verify_language
+show_help_menu
