@@ -15,6 +15,8 @@ declare -g SYS_PADDING=10
 
 declare -a PARSING_LANG_CODE
 
+declare -a CURRENT_MENU
+
 build_breadcrumb() {
 
     local bc=""
@@ -164,7 +166,7 @@ parse_menu_content() {
   declare -A _content_name _content_keys _content_values
   declare -A _type_map
 
-  # === Datei lesen ===
+  # --- Datei lesen
   while IFS= read -r line || [ -n "$line" ]; do
     # Trim spaces
     line="${line#"${line%%[![:space:]]*}"}"
@@ -232,7 +234,7 @@ parse_menu_content() {
     fi
   done < "$INI_FILE"
 
-  # === Globale Arrays befüllen ===
+  # --- Globale Arrays befüllen
   for code in "${!_type_map[@]}"; do
     TYPE["$PARSING_LANG_CODE,$code"]="${_type_map[$code]}"
   done
@@ -410,11 +412,21 @@ show_content() {
   local current_index=0
 
   while (( current_index < total_pages )); do
-    local page_title="$title"
-    (( total_pages > 1 )) && page_title="$title (Page $((current_index + 1))/$total_pages)"
 
     local content="${values[$current_index]}"
     local content_type="${keys[$current_index]}"
+
+    local page_title="$title"
+    (( total_pages > 1 )) && page_title="$title (Page $((current_index + 1))/$total_pages)"
+
+    # NEW Check if File Exist or Not readable
+    # TODO Hier muss noch die TEXT-VARIBALEN aus Language Management System
+    if [[ "$content_type" == "file" ]]; then
+
+      [[ ! -f "$content" ]] && { content_type="text"; content="Datei '$content' nicht Gefunden!"; }
+      [[ -f "$content" && ! -r "$content" ]] && { content_type="text"; content="Datei '$content' nicht Lesbar!"; }
+
+    fi
 
     (( current_index == total_pages - 1 )) && no_button="Schließen"
     # Show Whiptail Dialog
@@ -493,6 +505,10 @@ show_menu() {
         local keys="${MENU[$LANG_CODE,$CODE,key]}"
         local values="${MENU[$LANG_CODE,$CODE,value]}"
 
+
+        # NOTE Muss die Prüfung hier nochmals sein ?
+        #      Da wir ja vorher Prüfen ob es ein Menü gibt.
+        #      Wenn nicht wird die .ini garnicht erst geladen
         # Check if menu exists
         if [[ -z "$keys" || -z "$values" ]]; then
             whiptail --title "Fehler" --backtitle "$breadcrumb" \
@@ -524,7 +540,7 @@ show_menu() {
                 parent="${CODE%-*}"
             fi
         else
-            menu_items+=("${LANG_CODE^^}" "Change Language")
+            menu_items+=("${LANG_CODE^^}" "Change Language")  # Build Language Menu Item
         fi
 
       # Calculate menu size
@@ -643,6 +659,7 @@ show_menu
 
 # TODO
 #
+# - Error Meldung wenn content->file & Datei nicht Gefunden   x
 # - Language Management System integrieren
 # - Prüfungen in der Funktion <pars_meta> <99>
 #   - Ist <lang_code> & <name> in meta ?
